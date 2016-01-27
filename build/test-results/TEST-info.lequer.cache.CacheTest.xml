@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="info.lequer.cache.CacheTest" tests="18" skipped="0" failures="0" errors="0" timestamp="2016-01-27T04:42:24" hostname="acer" time="30.197">
+  <properties/>
+  <testcase name="testSize" classname="info.lequer.cache.CacheTest" time="0.017"/>
+  <testcase name="testRemove" classname="info.lequer.cache.CacheTest" time="0.01"/>
+  <testcase name="testCleanup" classname="info.lequer.cache.CacheTest" time="15.014"/>
+  <testcase name="testLoad" classname="info.lequer.cache.CacheTest" time="0.013"/>
+  <testcase name="testWrite" classname="info.lequer.cache.CacheTest" time="0.01"/>
+  <testcase name="testGetName" classname="info.lequer.cache.CacheTest" time="0.005"/>
+  <testcase name="testClear" classname="info.lequer.cache.CacheTest" time="0.004"/>
+  <testcase name="testExists" classname="info.lequer.cache.CacheTest" time="0.004"/>
+  <testcase name="testPutAndGet" classname="info.lequer.cache.CacheTest" time="0.011"/>
+  <testcase name="testSize" classname="info.lequer.cache.CacheTest" time="0.002"/>
+  <testcase name="testRemove" classname="info.lequer.cache.CacheTest" time="0.007"/>
+  <testcase name="testCleanup" classname="info.lequer.cache.CacheTest" time="15.014"/>
+  <testcase name="testLoad" classname="info.lequer.cache.CacheTest" time="0.007"/>
+  <testcase name="testWrite" classname="info.lequer.cache.CacheTest" time="0.011"/>
+  <testcase name="testGetName" classname="info.lequer.cache.CacheTest" time="0.002"/>
+  <testcase name="testClear" classname="info.lequer.cache.CacheTest" time="0.028"/>
+  <testcase name="testExists" classname="info.lequer.cache.CacheTest" time="0.005"/>
+  <testcase name="testPutAndGet" classname="info.lequer.cache.CacheTest" time="0.002"/>
+  <system-out><![CDATA[size0
+remove
+cleanup
+1453869749709 clear=1
+write
+getName
+clear
+Put an Get
+size0
+remove
+cleanup
+1453869759765 test=1
+1453869759777 1=2
+1453869759777 1000=long
+1453869764799 clear=1
+write
+getName
+clear
+Put an Get
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

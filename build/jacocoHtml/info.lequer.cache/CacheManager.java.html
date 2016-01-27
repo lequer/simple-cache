@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>CacheManager.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Cache</a> &gt; <a href="index.source.html" class="el_package">info.lequer.cache</a> &gt; <span class="el_source">CacheManager.java</span></div><h1>CacheManager.java</h1><pre class="source lang-java linenums">/*
+ * 
+ * 
+ */
+package info.lequer.cache;
+
+import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ * @author Michel
+ */
+<span class="pc" id="L15">public enum CacheManager {</span>
+
+<span class="fc" id="L17">    INSTANCE;</span>
+<span class="fc" id="L18">    private final ConcurrentHashMap&lt;String, Cache&gt; caches = new ConcurrentHashMap&lt;&gt;();</span>
+
+    public Cache getCache(String cacheName) {
+<span class="fc" id="L21">        return caches.get(cacheName);</span>
+    }
+
+    public void addCache(Cache cache) {
+<span class="fc" id="L25">        caches.put(cache.getName(), cache);</span>
+<span class="fc" id="L26">    }</span>
+    
+    public void removeCache(Cache cache){
+<span class="fc" id="L29">        caches.remove(cache.getName());</span>
+<span class="fc" id="L30">    }</span>
+
+    public boolean cacheExists(String candidates) {
+<span class="pc bpc" id="L33" title="1 of 4 branches missed.">        return (caches.containsKey(candidates) &amp;&amp; caches.get(candidates) != null);</span>
+    }
+
+    public &lt;K extends Object, V extends Object&gt; void create(String name, long timeToLive, long timeInterval, int maxElements, Class&lt;K&gt; keyType, Class&lt;V&gt; valueType) {
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        if (!cacheExists(name)) {</span>
+<span class="fc" id="L38">            caches.put(name, new Cache&lt;K, V&gt;(name, timeToLive, timeInterval, maxElements));</span>
+        }
+<span class="fc" id="L40">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.1.201405082137</span></div></body></html>

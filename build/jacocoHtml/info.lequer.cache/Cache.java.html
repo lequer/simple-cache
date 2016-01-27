@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Cache.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Cache</a> &gt; <a href="index.source.html" class="el_package">info.lequer.cache</a> &gt; <span class="el_source">Cache.java</span></div><h1>Cache.java</h1><pre class="source lang-java linenums">/*
+ * 
+ * 
+ */
+package info.lequer.cache;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import org.slf4j.Logger;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import static java.lang.System.currentTimeMillis;
+import static java.lang.Thread.sleep;
+import java.util.Comparator;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ * @author Michel
+ * @param &lt;K&gt;
+ * @param &lt;V&gt;
+ */
+public class Cache&lt;K extends Object, V extends Object&gt; {
+
+<span class="fc" id="L30">    private final Logger logger = LoggerFactory.getLogger(Cache.class);</span>
+
+    private final ConcurrentHashMap&lt;K, CacheObject&lt;V&gt;&gt; cacheMap;
+    private final String name;
+    private final long timeIdle;
+    private final long timeToLive;
+    private final int maxElements;
+    private File cacheFile;
+
+    /**
+     *
+     * @param name
+     * @param timeIdle time is given in seconds
+     * @param ttl time is given in seconds
+     * @param maxElements
+     */
+<span class="fc" id="L46">    public Cache(String name, long timeIdle, long ttl, int maxElements) {</span>
+<span class="fc" id="L47">        this.name = name;</span>
+<span class="fc" id="L48">        this.timeIdle = timeIdle * 1000;</span>
+<span class="fc" id="L49">        this.timeToLive = ttl * 1000;</span>
+
+<span class="fc" id="L51">        this.maxElements = maxElements;</span>
+<span class="fc" id="L52">        cacheMap = new ConcurrentHashMap&lt;&gt;();</span>
+        try {
+<span class="fc" id="L54">            cacheFile = File.createTempFile(name, &quot;cache&quot;);</span>
+<span class="nc" id="L55">        } catch (IOException ex) {</span>
+<span class="nc" id="L56">            throw new IllegalArgumentException(&quot;Cannot access cache file&quot;);</span>
+<span class="fc" id="L57">        }</span>
+      
+
+<span class="fc" id="L60">        logger.info(&quot;initialiazing cache &quot; + name + &quot; with timeToLive: {}&quot;, this.timeToLive);</span>
+<span class="pc bpc" id="L61" title="2 of 4 branches missed.">        if (this.timeIdle &gt; 0 &amp;&amp; this.timeToLive &gt; 0) {</span>
+
+            Thread t;
+<span class="fc" id="L64">            t = new Thread(() -&gt; {</span>
+                while (true) {
+                    
+                    try {
+                        sleep(timeToLive);
+                    } catch (InterruptedException ex) {
+                        logger.error(ex.getMessage());
+                    }
+                    sortLRU();
+                    cleanup();
+                    logger.debug(&quot;cleanup cache&quot;);
+                    write();
+                }
+            });
+
+<span class="fc" id="L79">            t.setDaemon(true);</span>
+<span class="fc" id="L80">            t.start();</span>
+        }
+
+<span class="fc" id="L83">    }</span>
+
+    // PUT method
+    public void put(K key, V value) {
+<span class="fc" id="L87">        cacheMap.put(key, new CacheObject&lt;&gt;(value));</span>
+<span class="fc" id="L88">    }</span>
+
+    // GET method
+    public V get(K key) {
+        V c;
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (cacheMap.get(key) != null) {</span>
+<span class="fc" id="L94">            c = cacheMap.get(key).value;</span>
+<span class="fc" id="L95">            cacheMap.get(key).lastAccessed = currentTimeMillis();</span>
+        } else {
+<span class="fc" id="L97">            c = null;</span>
+        }
+<span class="fc" id="L99">        return c;</span>
+    }
+
+    // REMOVE method
+    public void remove(K key) {
+<span class="fc" id="L104">        cacheMap.remove(key);</span>
+<span class="fc" id="L105">    }</span>
+
+    // Get Cache Objects Size()
+    public int size() {
+<span class="fc" id="L109">        return cacheMap.size();</span>
+    }
+
+    // Empty the cache from all objects
+    // and remove the cache file
+    public void clear() {
+<span class="fc" id="L115">        cacheMap.clear();</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        if (cacheFile.exists()) {</span>
+<span class="fc" id="L117">            cacheFile.delete();</span>
+        }
+
+<span class="fc" id="L120">    }</span>
+
+    // CLEANUP method
+    public void cleanup() {
+
+<span class="fc" id="L125">        long now = currentTimeMillis();</span>
+<span class="fc" id="L126">        Iterator&lt;Entry&lt;K, CacheObject&lt;V&gt;&gt;&gt; itr = cacheMap.entrySet().iterator();</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        while (itr.hasNext()) {</span>
+<span class="fc" id="L128">            Entry&lt;K, CacheObject&lt;V&gt;&gt; currentElement = itr.next();</span>
+
+<span class="fc bfc" id="L130" title="All 2 branches covered.">            if (currentElement.getValue().lastAccessed + timeIdle &lt; now) {</span>
+<span class="fc" id="L131">                itr.remove();</span>
+            }
+
+<span class="fc" id="L134">        }</span>
+
+<span class="fc" id="L136">    }</span>
+
+    /**
+     * When loading a file, the default behavior is to clear the loaded one
+     * already.
+     */
+    public void load() {
+<span class="fc" id="L143">        cacheMap.clear();</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">        if (cacheFile.exists()) {</span>
+<span class="pc" id="L145">            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(cacheFile))) {</span>
+
+<span class="fc" id="L147">                cacheMap.putAll((ConcurrentHashMap&lt;K, CacheObject&lt;V&gt;&gt;) ois.readObject());</span>
+<span class="pc bpc" id="L148" title="6 of 8 branches missed.">            } catch (IOException | ClassNotFoundException ex) {</span>
+<span class="nc" id="L149">                logger.error(&quot;Cannot load cache: {}&quot;, ex.getMessage());</span>
+<span class="fc" id="L150">            }</span>
+        }
+<span class="fc" id="L152">    }</span>
+
+    public void write() {
+<span class="pc" id="L155">        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(cacheFile))) {</span>
+<span class="fc" id="L156">            out.writeObject(cacheMap);</span>
+<span class="pc bpc" id="L157" title="6 of 8 branches missed.">        } catch (IOException ex) {</span>
+<span class="nc" id="L158">            logger.error(ex.getMessage());</span>
+<span class="fc" id="L159">        }</span>
+
+<span class="fc" id="L161">    }</span>
+
+    public String getName() {
+<span class="fc" id="L164">        return this.name;</span>
+    }
+
+    public File getCacheFile(){
+<span class="fc" id="L168">        return cacheFile;</span>
+    }
+    public void sortLRU() {
+<span class="fc" id="L171">        Comparator&lt;Entry&lt;K, CacheObject&lt;V&gt;&gt;&gt; byValue = (entry1, entry2) -&gt; entry1.getValue().lastAccessed.compareTo(</span>
+                entry2.getValue().lastAccessed);
+<span class="fc" id="L173">        cacheMap.entrySet().stream().sorted(byValue.reversed());</span>
+<span class="fc" id="L174">        Iterator&lt;Entry&lt;K, CacheObject&lt;V&gt;&gt;&gt; itr = cacheMap.entrySet().iterator();</span>
+<span class="fc bfc" id="L175" title="All 2 branches covered.">        while (itr.hasNext()) {</span>
+<span class="fc" id="L176">            Entry&lt;K, CacheObject&lt;V&gt;&gt; currentElement = itr.next();</span>
+<span class="fc" id="L177">            System.out.println(currentElement.getValue().lastAccessed + &quot; &quot; + currentElement);</span>
+            //if (currentElement.getValue().lastAccessed + timeIdle &lt; now) {
+            //   itr.remove();
+            // }
+
+<span class="fc" id="L182">        }</span>
+<span class="fc" id="L183">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.1.201405082137</span></div></body></html>
