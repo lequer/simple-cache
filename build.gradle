@@ -58,7 +58,7 @@ uploadArchives {
                 authentication(userName: mavenUser, password: mavenPassword)
             }
             repository(url: "http://lequer.info:8081/nexus/content/repositories/releases") {
-                authentication(userName: mavenUser, password: mavenPassword)
+                authentication(userName: mavenUser, password: mavenPassword )
             }
             pom.version = "$version"
             pom.artifactId = "cache"
